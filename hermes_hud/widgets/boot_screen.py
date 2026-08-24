@@ -7,6 +7,7 @@ import re
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
+from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Static
 
@@ -130,6 +131,9 @@ def _humanize_schedule(sched: str) -> str:
 
 class OverviewNeofetch(Widget):
     """AI neofetch overview widget — animates on first mount, static on refresh."""
+
+    class BootFinished(Message):
+        """Posted when the animated boot sequence has finished rendering."""
 
     DEFAULT_CSS = """
     OverviewNeofetch {
@@ -446,3 +450,4 @@ class OverviewNeofetch(Widget):
 
         # Force layout recalc so scroll_end reaches the true bottom
         self._container.refresh(layout=True)
+        self.post_message(self.BootFinished())

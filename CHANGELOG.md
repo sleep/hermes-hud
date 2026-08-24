@@ -28,9 +28,9 @@ A new `--auto` flag turns the HUD into a hands-free status display. It skips the
 **What's new:**
 
 - **`--auto` CLI flag** — enables kiosk mode
-- **Auto-scroll** — pages down the active tab every `HERMES_HUD_AUTO_SCROLL` seconds (default: 3)
+- **Auto-scroll** — smoothly scrolls the active tab line-by-line every `HERMES_HUD_AUTO_SCROLL` seconds (default: 1)
 - **Auto-tab rotation** — switches to the next data tab every `HERMES_HUD_AUTO_TAB` seconds (default: 20); cycles through dashboard, cron, projects, health, corrections, agents, profiles, and patterns
-- **Boot animation skipped** — loads the dashboard immediately so the display starts showing data
+- **Keeps the boot animation** — the HUD plays the full boot sequence, then transitions to the dashboard and starts timers
 - **Status indicator** — footer shows scroll/tab intervals when active
 
 **Files changed:**

@@ -65,7 +65,7 @@ Hermes HUD works out of the box. For non-standard setups:
 | `HERMES_HUD_NOBOOT` | _(unset)_ | Skip boot animation |
 | `HERMES_HUD_REFRESH` | `0` | Auto-refresh interval in seconds (`0` = manual only) |
 | `HERMES_HUD_AUTO` | _(unset)_ | Enable kiosk mode: auto-scroll and rotate tabs |
-| `HERMES_HUD_AUTO_SCROLL` | `3` | Seconds between page scrolls in kiosk mode |
+| `HERMES_HUD_AUTO_SCROLL` | `1` | Seconds between smooth line scrolls in kiosk mode |
 | `HERMES_HUD_AUTO_TAB` | `20` | Seconds between tab switches in kiosk mode |
 
 Works on **macOS** and **Linux**.

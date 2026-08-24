@@ -142,7 +142,7 @@ class TestAppInstantiation:
         monkeypatch.delenv("HERMES_HUD_AUTO", raising=False)
         app = HermesHUD()
         assert app.auto_mode is False
-        assert app.auto_scroll_seconds == 3
+        assert app.auto_scroll_seconds == 1
         assert app.auto_tab_seconds == 20
 
     def test_auto_mode_env_var_enabled(self, env_override, monkeypatch):
@@ -171,8 +171,15 @@ class TestAppInstantiation:
         monkeypatch.setenv("HERMES_HUD_AUTO_TAB", "-5")
         app = HermesHUD()
         assert app.auto_mode is True
-        assert app.auto_scroll_seconds == 3
+        assert app.auto_scroll_seconds == 1
         assert app.auto_tab_seconds == 20
+
+    def test_auto_mode_boot_finished_message_exists(self, env_override):
+        from hermes_hud.widgets.boot_screen import OverviewNeofetch
+        from hermes_hud.hud import HermesHUD
+
+        assert hasattr(OverviewNeofetch, "BootFinished")
+        assert hasattr(HermesHUD, "on_overview_neofetch_boot_finished")
 
 
 class TestCLIEntryPoint:

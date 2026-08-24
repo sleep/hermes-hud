@@ -262,7 +262,7 @@ class HermesHUD(App):
         HERMES_HUD_AUTO_TAB configure timer intervals in seconds.
         """
         enabled = os.environ.get("HERMES_HUD_AUTO", "").lower() in ("1", "true", "yes")
-        scroll = self._parse_positive_int("HERMES_HUD_AUTO_SCROLL", 3)
+        scroll = self._parse_positive_int("HERMES_HUD_AUTO_SCROLL", 1)
         tab = self._parse_positive_int("HERMES_HUD_AUTO_TAB", 20)
         return enabled, scroll, tab
 
@@ -285,10 +285,6 @@ class HermesHUD(App):
 
     def on_mount(self) -> None:
         """Boot the overview neofetch, then lazy-load other tabs on switch."""
-        if self.auto_mode:
-            self._boot_into_auto_mode()
-            return
-
         animate = not os.environ.get("HERMES_HUD_NOBOOT")
         overview_scroll = self.query_one("#overview-scroll", VerticalScroll)
         overview_scroll.mount(OverviewNeofetch(animate=animate))
@@ -296,15 +292,21 @@ class HermesHUD(App):
         if self.auto_refresh_seconds > 0:
             self.set_interval(self.auto_refresh_seconds, self._auto_refresh)
 
-    def _boot_into_auto_mode(self) -> None:
-        """Skip boot animation and start timers for kiosk/status-display mode."""
-        overview_scroll = self.query_one("#overview-scroll", VerticalScroll)
-        overview_scroll.mount(OverviewNeofetch(animate=False))
+    def on_overview_neofetch_boot_finished(self, message) -> None:
+        """In kiosk mode, start the auto display once the boot animation ends."""
+        if not self.auto_mode or self._booted:
+            return
+        self._start_auto_mode()
+
+    def _start_auto_mode(self) -> None:
+        """Leave overview, load data, and start auto-scroll/tab timers."""
         self._booted = True
         self._load_data()
         self.action_switch_tab("dashboard")
-        if self.auto_refresh_seconds > 0:
-            self.set_interval(self.auto_refresh_seconds, self._auto_refresh)
+        self._start_auto_timers()
+
+    def _start_auto_timers(self) -> None:
+        """Start the scroll and tab-rotation timers for kiosk mode."""
         self.set_interval(self.auto_scroll_seconds, self._auto_scroll)
         self.set_interval(self.auto_tab_seconds, self._auto_next_tab)
 
@@ -313,6 +315,8 @@ class HermesHUD(App):
         if not self._booted and event.pane.id != "tab-overview":
             self._booted = True
             self._load_data()
+            if self.auto_mode:
+                self._start_auto_timers()
 
     def _status_line(self) -> Static:
         """Create the common status line widget."""
@@ -408,8 +412,8 @@ class HermesHUD(App):
         self.action_refresh()
 
     def _auto_scroll(self) -> None:
-        """Scroll the active tab down one page (kiosk mode)."""
-        self._active_scroll().scroll_page_down(animate=False)
+        """Smoothly scroll the active tab down one line (kiosk mode)."""
+        self._active_scroll().scroll_down(animate=True)
 
     def _auto_next_tab(self) -> None:
         """Rotate to the next useful tab and jump to the top (kiosk mode).
@@ -491,7 +495,7 @@ def main():
         print("  HERMES_HUD_NOBOOT        Skip boot animation in TUI")
         print("  HERMES_HUD_REFRESH       Auto-refresh interval in seconds (0 disables)")
         print("  HERMES_HUD_AUTO          Enable auto-scroll/tab-rotation kiosk mode")
-        print("  HERMES_HUD_AUTO_SCROLL   Seconds between page scrolls in auto mode (default: 3)")
+        print("  HERMES_HUD_AUTO_SCROLL   Seconds between line scrolls in auto mode (default: 1)")
         print("  HERMES_HUD_AUTO_TAB      Seconds between tab switches in auto mode (default: 20)")
         return
 
