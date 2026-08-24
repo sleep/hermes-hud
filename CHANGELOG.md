@@ -14,6 +14,7 @@ The HUD previously required pressing `r` to refresh. It now supports an optional
 
 - **Auto-refresh timer** — set `HERMES_HUD_REFRESH` to a positive number of seconds and the dashboard will refresh automatically
 - **Boot-screen safe** — auto-refresh waits until you leave the boot animation before it starts reloading data
+- **Toggle from the footer** — press `a` in the TUI to turn auto-refresh on/off without restarting
 - **Status indicator** — when auto-refresh is enabled, the footer status line shows the interval
 
 **Files changed:**

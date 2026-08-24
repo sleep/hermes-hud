@@ -228,6 +228,7 @@ class HermesHUD(App):
     BINDINGS = [
         Binding("q", "quit", "Quit", priority=True),
         Binding("r", "refresh", "Refresh", priority=True),
+        Binding("a", "toggle_auto_refresh", "Toggle Auto", priority=True),
         *[Binding(td[2], f"switch_tab('{td[0]}')", td[1], show=False) for td in TAB_DEFS],
         Binding("j", "scroll_down", "Scroll Down", show=False),
         Binding("k", "scroll_up", "Scroll Up", show=False),
@@ -240,6 +241,8 @@ class HermesHUD(App):
         self.state: HUDState | None = None
         self._booted = False
         self.auto_refresh_seconds = self._parse_refresh_interval()
+        self.auto_refresh_enabled = self.auto_refresh_seconds > 0
+        self._refresh_timer = None
         self.auto_mode, self.auto_scroll_seconds, self.auto_tab_seconds = self._parse_auto_mode()
         self._auto_tab_index = 0
         for theme in HERMES_THEMES:
@@ -289,8 +292,8 @@ class HermesHUD(App):
         overview_scroll = self.query_one("#overview-scroll", VerticalScroll)
         overview_scroll.mount(OverviewNeofetch(animate=animate))
         self._booted = False
-        if self.auto_refresh_seconds > 0:
-            self.set_interval(self.auto_refresh_seconds, self._auto_refresh)
+        if self.auto_refresh_enabled:
+            self._start_refresh_timer()
 
     def on_overview_neofetch_boot_finished(self, message) -> None:
         """In kiosk mode, start the auto display once the boot animation ends."""
@@ -310,6 +313,29 @@ class HermesHUD(App):
         self.set_interval(self.auto_scroll_seconds, self._auto_scroll)
         self.set_interval(self.auto_tab_seconds, self._auto_next_tab)
 
+    def _start_refresh_timer(self) -> None:
+        """Start the data auto-refresh timer, storing its handle."""
+        interval = self.auto_refresh_seconds if self.auto_refresh_seconds > 0 else 30
+        self._refresh_timer = self.set_interval(interval, self._auto_refresh)
+
+    def _stop_refresh_timer(self) -> None:
+        """Stop the data auto-refresh timer if it is running."""
+        if self._refresh_timer is not None:
+            self._refresh_timer.stop()
+            self._refresh_timer = None
+
+    def action_toggle_auto_refresh(self) -> None:
+        """Toggle data auto-refresh on/off from the footer keybinding."""
+        self.auto_refresh_enabled = not self.auto_refresh_enabled
+        if self.auto_refresh_enabled:
+            if self.auto_refresh_seconds == 0:
+                self.auto_refresh_seconds = 30
+            self._start_refresh_timer()
+            self.notify(f"Auto-refresh on ({self.auto_refresh_seconds}s)")
+        else:
+            self._stop_refresh_timer()
+            self.notify("Auto-refresh off")
+
     def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
         """Lazy-load tab data when first switching away from overview."""
         if not self._booted and event.pane.id != "tab-overview":
@@ -323,14 +349,14 @@ class HermesHUD(App):
         parts = []
         if self.auto_mode:
             parts.append(f"auto scroll {self.auto_scroll_seconds}s │ tab {self.auto_tab_seconds}s")
-        if self.auto_refresh_seconds > 0:
+        if self.auto_refresh_enabled:
             parts.append(f"auto-refresh {self.auto_refresh_seconds}s")
         auto_text = " │ ".join(parts)
         if auto_text:
             auto_text = f" │ {auto_text}"
         return Static(
             f"  [dim]Last refreshed: {self.state.collected_at:%H:%M:%S} │ "
-            f"[bold]r[/bold] refresh │ [bold]q[/bold] quit │ "
+            f"[bold]r[/bold] refresh │ [bold]a[/bold] toggle auto │ [bold]q[/bold] quit │ "
             f"[bold]1-8[/bold] switch tabs │ [bold]j/k[/bold] scroll{auto_text}[/dim]",
             classes="status-line",
         )
@@ -488,6 +514,14 @@ def main():
         print("  --fsociety    Mr. Robot / fsociety neofetch")
         print("  --anime       Mewtwo ASCII art neofetch")
         print("  -h, --help    Show this message")
+        print()
+        print("Keyboard:")
+        print("  r             Refresh data")
+        print("  a             Toggle auto-refresh")
+        print("  q             Quit")
+        print("  1-9           Switch tabs")
+        print("  j/k           Scroll down/up")
+        print("  g/G           Jump to top/bottom")
         print()
         print("Environment:")
         print("  HERMES_HOME              Agent data directory (default: ~/.hermes)")

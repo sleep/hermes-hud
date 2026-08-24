@@ -63,7 +63,7 @@ Hermes HUD works out of the box. For non-standard setups:
 | `HERMES_HOME` | `~/.hermes` | Agent data directory |
 | `HERMES_HUD_PROJECTS_DIR` | `~/projects` | Directory to scan for git repos |
 | `HERMES_HUD_NOBOOT` | _(unset)_ | Skip boot animation |
-| `HERMES_HUD_REFRESH` | `0` | Auto-refresh interval in seconds (`0` = manual only) |
+| `HERMES_HUD_REFRESH` | `0` | Auto-refresh interval in seconds (`0` = off at startup; toggle with `a`) |
 | `HERMES_HUD_AUTO` | _(unset)_ | Enable kiosk mode: auto-scroll and rotate tabs |
 | `HERMES_HUD_AUTO_SCROLL` | `1` | Seconds between smooth line scrolls in kiosk mode |
 | `HERMES_HUD_AUTO_TAB` | `20` | Seconds between tab switches in kiosk mode |
@@ -94,6 +94,7 @@ hermes-hud --help       # Show all options
 | `j` / `k` | Scroll down / up |
 | `g` / `G` | Jump to top / bottom |
 | `r` | Refresh data |
+| `a` | Toggle auto-refresh |
 | `q` | Quit |
 
 ---

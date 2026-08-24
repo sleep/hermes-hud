@@ -112,8 +112,15 @@ class TestAppInstantiation:
         binding_keys = [b.key for b in app.BINDINGS]
         assert "q" in binding_keys
         assert "r" in binding_keys
+        assert "a" in binding_keys
         assert "1" in binding_keys
         assert "7" in binding_keys
+
+    def test_app_has_auto_refresh_toggle_action(self, env_override):
+        from hermes_hud.hud import HermesHUD
+
+        app = HermesHUD()
+        assert hasattr(app, "action_toggle_auto_refresh")
 
     def test_auto_refresh_default_disabled(self, env_override, monkeypatch):
         from hermes_hud.hud import HermesHUD
@@ -121,6 +128,7 @@ class TestAppInstantiation:
         monkeypatch.delenv("HERMES_HUD_REFRESH", raising=False)
         app = HermesHUD()
         assert app.auto_refresh_seconds == 0
+        assert app.auto_refresh_enabled is False
 
     def test_auto_refresh_env_var(self, env_override, monkeypatch):
         from hermes_hud.hud import HermesHUD
@@ -128,6 +136,7 @@ class TestAppInstantiation:
         monkeypatch.setenv("HERMES_HUD_REFRESH", "30")
         app = HermesHUD()
         assert app.auto_refresh_seconds == 30
+        assert app.auto_refresh_enabled is True
 
     def test_auto_refresh_invalid_defaults_to_zero(self, env_override, monkeypatch):
         from hermes_hud.hud import HermesHUD
@@ -135,6 +144,7 @@ class TestAppInstantiation:
         monkeypatch.setenv("HERMES_HUD_REFRESH", "not-a-number")
         app = HermesHUD()
         assert app.auto_refresh_seconds == 0
+        assert app.auto_refresh_enabled is False
 
     def test_auto_mode_default_disabled(self, env_override, monkeypatch):
         from hermes_hud.hud import HermesHUD
