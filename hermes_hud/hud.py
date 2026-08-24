@@ -298,8 +298,11 @@ class HermesHUD(App):
 
     def _boot_into_auto_mode(self) -> None:
         """Skip boot animation and start timers for kiosk/status-display mode."""
+        overview_scroll = self.query_one("#overview-scroll", VerticalScroll)
+        overview_scroll.mount(OverviewNeofetch(animate=False))
         self._booted = True
         self._load_data()
+        self.action_switch_tab("dashboard")
         if self.auto_refresh_seconds > 0:
             self.set_interval(self.auto_refresh_seconds, self._auto_refresh)
         self.set_interval(self.auto_scroll_seconds, self._auto_scroll)
