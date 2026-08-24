@@ -63,6 +63,7 @@ Hermes HUD works out of the box. For non-standard setups:
 | `HERMES_HOME` | `~/.hermes` | Agent data directory |
 | `HERMES_HUD_PROJECTS_DIR` | `~/projects` | Directory to scan for git repos |
 | `HERMES_HUD_NOBOOT` | _(unset)_ | Skip boot animation |
+| `HERMES_HUD_REFRESH` | `0` | Auto-refresh interval in seconds (`0` = manual only) |
 
 Works on **macOS** and **Linux**.
 

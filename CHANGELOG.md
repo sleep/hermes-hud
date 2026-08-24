@@ -4,6 +4,25 @@ All notable changes to Hermes HUD are documented here.
 
 ---
 
+## [Unreleased]
+
+### Auto-Refresh
+
+The HUD previously required pressing `r` to refresh. It now supports an optional auto-refresh timer controlled by the `HERMES_HUD_REFRESH` environment variable.
+
+**What's new:**
+
+- **Auto-refresh timer** — set `HERMES_HUD_REFRESH` to a positive number of seconds and the dashboard will refresh automatically
+- **Boot-screen safe** — auto-refresh waits until you leave the boot animation before it starts reloading data
+- **Status indicator** — when auto-refresh is enabled, the footer status line shows the interval
+
+**Files changed:**
+- `hermes_hud/hud.py` — env var parsing, timer setup, `_auto_refresh` callback, status line
+- `README.md` — documented `HERMES_HUD_REFRESH`
+- `tests/test_integration.py` — coverage for default, valid, and invalid env var values
+
+---
+
 ## [0.5.0] — 2026-04-06
 
 ### Prompt Patterns Tab

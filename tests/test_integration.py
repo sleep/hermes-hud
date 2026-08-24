@@ -115,6 +115,27 @@ class TestAppInstantiation:
         assert "1" in binding_keys
         assert "7" in binding_keys
 
+    def test_auto_refresh_default_disabled(self, env_override, monkeypatch):
+        from hermes_hud.hud import HermesHUD
+
+        monkeypatch.delenv("HERMES_HUD_REFRESH", raising=False)
+        app = HermesHUD()
+        assert app.auto_refresh_seconds == 0
+
+    def test_auto_refresh_env_var(self, env_override, monkeypatch):
+        from hermes_hud.hud import HermesHUD
+
+        monkeypatch.setenv("HERMES_HUD_REFRESH", "30")
+        app = HermesHUD()
+        assert app.auto_refresh_seconds == 30
+
+    def test_auto_refresh_invalid_defaults_to_zero(self, env_override, monkeypatch):
+        from hermes_hud.hud import HermesHUD
+
+        monkeypatch.setenv("HERMES_HUD_REFRESH", "not-a-number")
+        app = HermesHUD()
+        assert app.auto_refresh_seconds == 0
+
 
 class TestCLIEntryPoint:
     """Test that the CLI entry point handles args."""
@@ -130,6 +151,7 @@ class TestCLIEntryPoint:
         captured = capsys.readouterr()
         assert "Usage: hermes-hud" in captured.out
         assert "HERMES_HOME" in captured.out
+        assert "HERMES_HUD_REFRESH" in captured.out
 
     def test_text_mode(self, env_override, capsys):
         import sys

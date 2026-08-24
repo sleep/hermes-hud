@@ -239,9 +239,19 @@ class HermesHUD(App):
         super().__init__()
         self.state: HUDState | None = None
         self._booted = False
+        self.auto_refresh_seconds = self._parse_refresh_interval()
         for theme in HERMES_THEMES:
             self.register_theme(theme)
         self.theme = DEFAULT_THEME
+
+    def _parse_refresh_interval(self) -> int:
+        """Read HERMES_HUD_REFRESH env var; 0 or invalid means disabled."""
+        raw = os.environ.get("HERMES_HUD_REFRESH", "0")
+        try:
+            seconds = int(raw)
+        except ValueError:
+            return 0
+        return max(0, seconds)
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -257,6 +267,8 @@ class HermesHUD(App):
         overview_scroll = self.query_one("#overview-scroll", VerticalScroll)
         overview_scroll.mount(OverviewNeofetch(animate=animate))
         self._booted = False
+        if self.auto_refresh_seconds > 0:
+            self.set_interval(self.auto_refresh_seconds, self._auto_refresh)
 
     def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
         """Lazy-load tab data when first switching away from overview."""
@@ -266,10 +278,13 @@ class HermesHUD(App):
 
     def _status_line(self) -> Static:
         """Create the common status line widget."""
+        auto_text = ""
+        if self.auto_refresh_seconds > 0:
+            auto_text = f" │ auto-refresh {self.auto_refresh_seconds}s"
         return Static(
             f"  [dim]Last refreshed: {self.state.collected_at:%H:%M:%S} │ "
             f"[bold]r[/bold] refresh │ [bold]q[/bold] quit │ "
-            f"[bold]1-8[/bold] switch tabs │ [bold]j/k[/bold] scroll[/dim]",
+            f"[bold]1-8[/bold] switch tabs │ [bold]j/k[/bold] scroll{auto_text}[/dim]",
             classes="status-line",
         )
 
@@ -343,6 +358,12 @@ class HermesHUD(App):
         self._load_data()
         self.notify("Data refreshed!", severity="information")
 
+    def _auto_refresh(self) -> None:
+        """Background timer callback; skip refresh while boot screen is showing."""
+        if not self._booted:
+            return
+        self.action_refresh()
+
     def action_switch_tab(self, tab_id: str) -> None:
         """Switch to a tab by its ID."""
         self.query_one("#tabs", TabbedContent).active = f"tab-{tab_id}"
@@ -407,6 +428,7 @@ def main():
         print("  HERMES_HOME              Agent data directory (default: ~/.hermes)")
         print("  HERMES_HUD_PROJECTS_DIR  Projects scan directory (default: ~/projects)")
         print("  HERMES_HUD_NOBOOT        Skip boot animation in TUI")
+        print("  HERMES_HUD_REFRESH       Auto-refresh interval in seconds (0 disables)")
         return
 
     if "--text" in sys.argv:
