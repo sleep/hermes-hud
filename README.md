@@ -64,6 +64,9 @@ Hermes HUD works out of the box. For non-standard setups:
 | `HERMES_HUD_PROJECTS_DIR` | `~/projects` | Directory to scan for git repos |
 | `HERMES_HUD_NOBOOT` | _(unset)_ | Skip boot animation |
 | `HERMES_HUD_REFRESH` | `0` | Auto-refresh interval in seconds (`0` = manual only) |
+| `HERMES_HUD_AUTO` | _(unset)_ | Enable kiosk mode: auto-scroll and rotate tabs |
+| `HERMES_HUD_AUTO_SCROLL` | `3` | Seconds between page scrolls in kiosk mode |
+| `HERMES_HUD_AUTO_TAB` | `20` | Seconds between tab switches in kiosk mode |
 
 Works on **macOS** and **Linux**.
 
@@ -75,6 +78,7 @@ Works on **macOS** and **Linux**.
 hermes-hud              # Interactive TUI
 hermes-hud --text       # Text summary to stdout
 hermes-hud --snapshot   # Save a snapshot for diff tracking
+hermes-hud --auto       # Kiosk/status-display mode: auto-scroll and rotate tabs
 hermes-hud --ai         # AI awakening neofetch
 hermes-hud --br         # Blade Runner neofetch
 hermes-hud --fsociety   # Mr. Robot neofetch

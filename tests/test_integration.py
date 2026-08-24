@@ -136,6 +136,44 @@ class TestAppInstantiation:
         app = HermesHUD()
         assert app.auto_refresh_seconds == 0
 
+    def test_auto_mode_default_disabled(self, env_override, monkeypatch):
+        from hermes_hud.hud import HermesHUD
+
+        monkeypatch.delenv("HERMES_HUD_AUTO", raising=False)
+        app = HermesHUD()
+        assert app.auto_mode is False
+        assert app.auto_scroll_seconds == 3
+        assert app.auto_tab_seconds == 20
+
+    def test_auto_mode_env_var_enabled(self, env_override, monkeypatch):
+        from hermes_hud.hud import HermesHUD
+
+        monkeypatch.setenv("HERMES_HUD_AUTO", "1")
+        app = HermesHUD()
+        assert app.auto_mode is True
+
+    def test_auto_mode_env_var_overrides(self, env_override, monkeypatch):
+        from hermes_hud.hud import HermesHUD
+
+        monkeypatch.setenv("HERMES_HUD_AUTO", "true")
+        monkeypatch.setenv("HERMES_HUD_AUTO_SCROLL", "5")
+        monkeypatch.setenv("HERMES_HUD_AUTO_TAB", "45")
+        app = HermesHUD()
+        assert app.auto_mode is True
+        assert app.auto_scroll_seconds == 5
+        assert app.auto_tab_seconds == 45
+
+    def test_auto_mode_invalid_intervals_fallback_to_defaults(self, env_override, monkeypatch):
+        from hermes_hud.hud import HermesHUD
+
+        monkeypatch.setenv("HERMES_HUD_AUTO", "yes")
+        monkeypatch.setenv("HERMES_HUD_AUTO_SCROLL", "bad")
+        monkeypatch.setenv("HERMES_HUD_AUTO_TAB", "-5")
+        app = HermesHUD()
+        assert app.auto_mode is True
+        assert app.auto_scroll_seconds == 3
+        assert app.auto_tab_seconds == 20
+
 
 class TestCLIEntryPoint:
     """Test that the CLI entry point handles args."""
@@ -152,6 +190,8 @@ class TestCLIEntryPoint:
         assert "Usage: hermes-hud" in captured.out
         assert "HERMES_HOME" in captured.out
         assert "HERMES_HUD_REFRESH" in captured.out
+        assert "--auto" in captured.out
+        assert "HERMES_HUD_AUTO" in captured.out
 
     def test_text_mode(self, env_override, capsys):
         import sys

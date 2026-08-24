@@ -240,6 +240,8 @@ class HermesHUD(App):
         self.state: HUDState | None = None
         self._booted = False
         self.auto_refresh_seconds = self._parse_refresh_interval()
+        self.auto_mode, self.auto_scroll_seconds, self.auto_tab_seconds = self._parse_auto_mode()
+        self._auto_tab_index = 0
         for theme in HERMES_THEMES:
             self.register_theme(theme)
         self.theme = DEFAULT_THEME
@@ -253,6 +255,26 @@ class HermesHUD(App):
             return 0
         return max(0, seconds)
 
+    def _parse_auto_mode(self) -> tuple[bool, int, int]:
+        """Parse kiosk/auto-display settings from environment.
+
+        HERMES_HUD_AUTO enables the mode. HERMES_HUD_AUTO_SCROLL and
+        HERMES_HUD_AUTO_TAB configure timer intervals in seconds.
+        """
+        enabled = os.environ.get("HERMES_HUD_AUTO", "").lower() in ("1", "true", "yes")
+        scroll = self._parse_positive_int("HERMES_HUD_AUTO_SCROLL", 3)
+        tab = self._parse_positive_int("HERMES_HUD_AUTO_TAB", 20)
+        return enabled, scroll, tab
+
+    def _parse_positive_int(self, name: str, default: int) -> int:
+        """Read an env var as a positive integer, falling back to default."""
+        raw = os.environ.get(name, str(default))
+        try:
+            value = int(raw)
+        except ValueError:
+            return default
+        return value if value > 0 else default
+
     def compose(self) -> ComposeResult:
         yield Header()
         with TabbedContent(id="tabs"):
@@ -263,12 +285,25 @@ class HermesHUD(App):
 
     def on_mount(self) -> None:
         """Boot the overview neofetch, then lazy-load other tabs on switch."""
+        if self.auto_mode:
+            self._boot_into_auto_mode()
+            return
+
         animate = not os.environ.get("HERMES_HUD_NOBOOT")
         overview_scroll = self.query_one("#overview-scroll", VerticalScroll)
         overview_scroll.mount(OverviewNeofetch(animate=animate))
         self._booted = False
         if self.auto_refresh_seconds > 0:
             self.set_interval(self.auto_refresh_seconds, self._auto_refresh)
+
+    def _boot_into_auto_mode(self) -> None:
+        """Skip boot animation and start timers for kiosk/status-display mode."""
+        self._booted = True
+        self._load_data()
+        if self.auto_refresh_seconds > 0:
+            self.set_interval(self.auto_refresh_seconds, self._auto_refresh)
+        self.set_interval(self.auto_scroll_seconds, self._auto_scroll)
+        self.set_interval(self.auto_tab_seconds, self._auto_next_tab)
 
     def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
         """Lazy-load tab data when first switching away from overview."""
@@ -278,9 +313,14 @@ class HermesHUD(App):
 
     def _status_line(self) -> Static:
         """Create the common status line widget."""
-        auto_text = ""
+        parts = []
+        if self.auto_mode:
+            parts.append(f"auto scroll {self.auto_scroll_seconds}s │ tab {self.auto_tab_seconds}s")
         if self.auto_refresh_seconds > 0:
-            auto_text = f" │ auto-refresh {self.auto_refresh_seconds}s"
+            parts.append(f"auto-refresh {self.auto_refresh_seconds}s")
+        auto_text = " │ ".join(parts)
+        if auto_text:
+            auto_text = f" │ {auto_text}"
         return Static(
             f"  [dim]Last refreshed: {self.state.collected_at:%H:%M:%S} │ "
             f"[bold]r[/bold] refresh │ [bold]q[/bold] quit │ "
@@ -364,6 +404,23 @@ class HermesHUD(App):
             return
         self.action_refresh()
 
+    def _auto_scroll(self) -> None:
+        """Scroll the active tab down one page (kiosk mode)."""
+        self._active_scroll().scroll_page_down(animate=False)
+
+    def _auto_next_tab(self) -> None:
+        """Rotate to the next useful tab and jump to the top (kiosk mode).
+
+        Overview is excluded from rotation; the display cycles through the
+        data tabs (dashboard, cron, projects, health, corrections, agents,
+        profiles, patterns).
+        """
+        auto_tabs = [td[0] for td in TAB_DEFS[1:]]
+        self._auto_tab_index = (self._auto_tab_index + 1) % len(auto_tabs)
+        next_tab = auto_tabs[self._auto_tab_index]
+        self.action_switch_tab(next_tab)
+        self.action_scroll_home()
+
     def action_switch_tab(self, tab_id: str) -> None:
         """Switch to a tab by its ID."""
         self.query_one("#tabs", TabbedContent).active = f"tab-{tab_id}"
@@ -417,6 +474,7 @@ def main():
         print("Options:")
         print("  --text        Text summary to stdout (no TUI)")
         print("  --snapshot    Save a snapshot for diff tracking")
+        print("  --auto        Kiosk/status-display mode: auto-scroll and rotate tabs")
         print("  --neofetch    AI awakening neofetch (default theme)")
         print("  --ai          Alias for --neofetch")
         print("  --br          Blade Runner neofetch")
@@ -429,6 +487,9 @@ def main():
         print("  HERMES_HUD_PROJECTS_DIR  Projects scan directory (default: ~/projects)")
         print("  HERMES_HUD_NOBOOT        Skip boot animation in TUI")
         print("  HERMES_HUD_REFRESH       Auto-refresh interval in seconds (0 disables)")
+        print("  HERMES_HUD_AUTO          Enable auto-scroll/tab-rotation kiosk mode")
+        print("  HERMES_HUD_AUTO_SCROLL   Seconds between page scrolls in auto mode (default: 3)")
+        print("  HERMES_HUD_AUTO_TAB      Seconds between tab switches in auto mode (default: 20)")
         return
 
     if "--text" in sys.argv:
@@ -440,6 +501,9 @@ def main():
         from .snapshot import main as snapshot_main
         snapshot_main()
         return
+
+    if "--auto" in sys.argv:
+        os.environ["HERMES_HUD_AUTO"] = "1"
 
     neofetch_map = {
         "--neofetch": "neofetch_ai",

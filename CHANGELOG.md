@@ -21,6 +21,23 @@ The HUD previously required pressing `r` to refresh. It now supports an optional
 - `README.md` — documented `HERMES_HUD_REFRESH`
 - `tests/test_integration.py` — coverage for default, valid, and invalid env var values
 
+### Kiosk / Status-Display Mode
+
+A new `--auto` flag turns the HUD into a hands-free status display. It skips the boot animation, immediately loads data, and starts timers that page-scroll through the current tab and rotate to the next tab. Useful for leaving on a dedicated monitor.
+
+**What's new:**
+
+- **`--auto` CLI flag** — enables kiosk mode
+- **Auto-scroll** — pages down the active tab every `HERMES_HUD_AUTO_SCROLL` seconds (default: 3)
+- **Auto-tab rotation** — switches to the next data tab every `HERMES_HUD_AUTO_TAB` seconds (default: 20); cycles through dashboard, cron, projects, health, corrections, agents, profiles, and patterns
+- **Boot animation skipped** — loads the dashboard immediately so the display starts showing data
+- **Status indicator** — footer shows scroll/tab intervals when active
+
+**Files changed:**
+- `hermes_hud/hud.py` — `--auto` parsing, `_boot_into_auto_mode`, `_auto_scroll`, `_auto_next_tab`, status line
+- `README.md` — documented `--auto` and kiosk env vars
+- `tests/test_integration.py` — coverage for `--auto` flag and env var overrides
+
 ---
 
 ## [0.5.0] — 2026-04-06
